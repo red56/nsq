@@ -3,6 +3,7 @@ package clusterinfo
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"sort"
 	"strings"
 	"time"
@@ -77,11 +78,29 @@ func (p *Producer) Address() string {
 }
 
 func (p *Producer) HTTPAddress() string {
-	return fmt.Sprintf("%s:%d", p.BroadcastAddress, p.HTTPPort)
+	return addressWithPort(p.BroadcastAddress, p.HTTPPort)
 }
 
 func (p *Producer) TCPAddress() string {
-	return fmt.Sprintf("%s:%d", p.BroadcastAddress, p.TCPPort)
+	return addressWithPort(p.BroadcastAddress, p.TCPPort)
+}
+
+func addressWithPort(address string, port int) string {
+	ip := net.ParseIP(address)
+	if ip == nil {
+		return ipv4AddressWithPort(address, port)
+	}
+	if ip.To4() == nil {
+		return ipv6AddressWithPort(address, port)
+	}
+	return ipv4AddressWithPort(address, port)
+}
+
+func ipv4AddressWithPort(address string, port int) string {
+	return fmt.Sprintf("%s:%d", address, port)
+}
+func ipv6AddressWithPort(address string, port int) string {
+	return fmt.Sprintf("[%s]:%d", address, port)
 }
 
 // IsInconsistent checks for cases where an unexpected number of nsqd connections are
